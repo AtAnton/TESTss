@@ -1,0 +1,189 @@
+<html lang="ru"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="description" content="Вход в личный кабинет Виртуальной АТС Ростелеком. Восстановление пароля.">
+
+    <title>Личный кабинет Виртуальной АТС Ростелеком</title>
+
+    <link rel="stylesheet" type="text/css" href="/css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="/css/mdb.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+
+<style type="text/css">/* Chart.js */
+@-webkit-keyframes chartjs-render-animation{from{opacity:0.99}to{opacity:1}}@keyframes chartjs-render-animation{from{opacity:0.99}to{opacity:1}}.chartjs-render-monitor{-webkit-animation:chartjs-render-animation 0.001s;animation:chartjs-render-animation 0.001s;}</style></head>
+<body class="login">
+
+<div class="container h-100">
+    <a href="#" class="navbar-brand position-absolute">
+        <img src="/images/logo.svg" alt="">
+    </a>
+
+    <div class="panel-centered-wrap">
+        <div class="panel-centered text-center">
+
+            <h1>Авторизация</h1>
+
+<form action="/login/" method="post" name="login" onsubmit="doLogin(event,this)" id="login">    <div class="form-group md-form">
+        <input type="text" name="username" tabindex="1" id="username" class="form-control" value="">        <label for="username" class="active">Логин</label>    </div>
+    <div class="form-group md-form">
+        <input type="password" name="password" tabindex="2" id="password" autocomplete="off" class="form-control" value="">        <label for="password">Пароль</label>    </div>
+    <div class="form-group md-form">
+        <input type="text" name="domain" tabindex="3" id="domain" class="form-control" value="">        <label for="domain">Домен</label>    </div>
+
+        
+        
+    <div class="validation_error"></div>
+
+        
+    
+    <button type="submit" class="btn btn-lg orange mb-3 waves-effect waves-light">
+        Войти
+    </button>
+
+    
+        
+    <div>
+        <a href="/login/password_reset">Восстановить пароль</a>
+    </div>
+</form>
+
+<script>
+    function renewCaptcha(event, element){
+        if (event.preventDefault){
+            event.preventDefault();
+        }else{
+            event.returnValue = false;
+        }
+
+        showConnectProcess();
+
+        $.get('/captcha', {
+            base64: 1,
+            rand: Math.random()
+        }, function(response){
+            element.src = response;
+            hideConnectProcess();
+        });
+    }
+
+    function doLogin(event, form){
+        if (event.preventDefault){
+            event.preventDefault();
+        }else{
+            event.returnValue = false;
+        }
+
+        var _form = $(form);
+        var _form_data = _form.data();
+
+        $("input.error").removeClass("error");
+        $(".validation_error").hide().text("");
+        $(".alert.alert-warning,.alert.alert-info").remove();
+        var no_login = (0 === $("input#username", _form).val().length);
+        var no_password = (0 === $("input#password", _form).val().length);
+        var no_domain = (0 === $("input#domain", _form).val().length);
+        var no_captcha = ($("input#captcha", _form).length > 0 && $("input#captcha", _form).val().length === 0);
+        if (no_login){
+            $("input#username").addClass("error");
+        }
+        if (no_password){
+            $("input#password", _form).addClass("error");
+        }
+        if (no_domain){
+            $("input#domain", _form).addClass("error");
+        }
+        if (no_captcha){
+            $("input#captcha", _form).addClass("error");
+        }
+        if (no_login || no_password || no_domain || no_captcha) return false;
+
+        showConnectProcess();
+
+        $.ajax(_form.attr("action"), {
+            type: _form.attr("method")
+            , data: _form.serialize()
+            , success: function(data, status, xhr){
+                if (data.redirect){
+                    window.location.href = data.redirect;
+                    return;
+                }
+
+                hideConnectProcess();
+
+                if (data && data.error){
+                    $(".validation_error").show().text(data.error);
+                    return;
+                }
+
+                if (data && data.errors){
+                    if (data.errors.captcha_image){
+                        $("img#captcha-img").attr("src", data.errors.captcha_image);
+                    }
+                    if (data.errors.captcha){
+                        $(".validation_error").show().text(data.errors.captcha[Object.keys(data.errors.captcha)[0]]);
+                        return;
+                    }
+                    if (data.errors.domain){
+                        $(".validation_error").show().text(
+                            data.errors.domain[Object.keys(data.errors.domain)[0]]
+                        );
+                        $("input#domain").addClass("error");
+                        return;
+                    }
+                    if (data.errors.password){
+                        $(".validation_error").show().text(
+                            data.errors.password[Object.keys(data.errors.password)[0]]
+                        );
+                        $("input#password").addClass("error");
+                        $("input#username").addClass("error");
+                        return;
+                    }
+                }
+            }
+            , error: function (response) {
+                hideConnectProcess();
+                $(".validation_error").show().text("Техническая ошибка");
+            }
+        });
+
+        return false;
+    }
+</script>
+
+
+        </div>
+    </div>
+</div>
+
+<div id="connect">
+    <div class="loader">
+        <img class="loader-ico" src="/images/ajax-loader.gif">
+        Устанавливается соединение
+    </div>
+</div>
+
+<script type="text/javascript" src="/js/vendor/jquery-3.3.1.min.js"></script>
+<script type="text/javascript" src="/js/vendor/bootstrap.min.js"></script>
+<script type="text/javascript" src="/js/vendor/mdb.min.js"></script><div class="hiddendiv common"></div>
+
+<script type="application/javascript">
+    function showConnectProcess(){
+        var _loader_wrap = $("#connect");
+        if (_loader_wrap.is(":visible")) return;
+
+        var _loader_block = $(".loader", _loader_wrap);
+        _loader_wrap.show();
+        _loader_block.css({
+            "top": $(window).height()/2 - _loader_block.height()/2 + "px"
+            , "left": $(window).width()/2 - _loader_block.width()/2 + "px"
+        });
+    }
+
+    function hideConnectProcess() {
+        $("#connect").hide();
+    }
+</script>
+
+
+</body></html>
